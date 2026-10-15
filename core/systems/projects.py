@@ -309,6 +309,8 @@ def set_plan(game, data):
     lock = plan_locks(game, project).get(value)
     if lock:
         raise ValueError(lock)
+    if project.deal and field in ("scope", "format", "model"):
+        raise ValueError(f"{project.deal.publisher} signed off on this plan. Turn the deal down before changing it.")
     if field == "scope":
         plan.scope = str_arg(data, "value", SCOPE)
         if not BUSINESS_MODEL[plan.model]["free"]:
@@ -467,6 +469,8 @@ def decide(game, data):
 def release(game, data):
     s = game.s.studio
     project = project_or_fail(game, "polish")
+    if project.decision is not None:
+        raise ValueError("Make the waiting decision first.")
     plan = project.plan
     marketing = LAUNCH[plan.marketing]["cost"]
     if marketing:
@@ -546,7 +550,8 @@ def view(game):
 
 
 def share_estimate(game):
-    return getattr(game, "project_share", 0.6) or 0.6
+    from .work import allocation
+    return allocation(game).get("project", 0.0) or 0.5
 
 
 def plan_options(game):

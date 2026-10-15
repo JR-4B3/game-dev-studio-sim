@@ -133,6 +133,7 @@ class Project:
     pitched: list[str] = field(default_factory=list)
     production_day: int = 0
     costs: float = 0.0
+    last_community: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -299,6 +300,7 @@ class Market:
 @dataclass
 class Ledger:
     month: str
+    opening: float = 0.0  # cash on the first day of the month
     income: dict[str, float] = field(default_factory=dict)
     expenses: dict[str, float] = field(default_factory=dict)
     financing: dict[str, float] = field(default_factory=dict)

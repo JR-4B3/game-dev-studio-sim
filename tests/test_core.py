@@ -49,11 +49,14 @@ class Determinism(unittest.TestCase):
 
 class Money(unittest.TestCase):
     def test_the_books_explain_every_dollar(self):
-        game = played(3, 600)
+        game = played(3, 900)  # longer than the 24 months of books that are kept
         s = game.s.studio
         flows = sum(sum(l.income.values()) - sum(l.expenses.values()) + sum(l.financing.values())
                     for l in game.s.ledgers)
-        self.assertAlmostEqual(DEFAULT.start.cash + flows, s.cash, places=2)
+        self.assertAlmostEqual(game.s.ledgers[0].opening + flows, s.cash, places=2)
+        for month, following in zip(game.s.ledgers, game.s.ledgers[1:]):
+            net = sum(month.income.values()) - sum(month.expenses.values()) + sum(month.financing.values())
+            self.assertAlmostEqual(month.opening + net, following.opening, places=2)
 
     def test_idle_founder_goes_bankrupt_and_time_stops(self):
         game = Game.new(4, START)

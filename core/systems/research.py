@@ -56,7 +56,20 @@ def cancel(game, data):
         s.research_active, s.research_work = (s.research_queue.pop(0) if s.research_queue else ""), 0.0
     else:
         raise ValueError("That research is not planned.")
-    game.log(f"Dropped research: {RESEARCH_NODE[key]['name']}. The money is spent.")
+    dropped = [RESEARCH_NODE[key]["name"]]
+    changed = True
+    while changed:
+        changed = False
+        planned = set(s.research_done) | set(s.research_queue) | {s.research_active}
+        for queued in list(s.research_queue) + ([s.research_active] if s.research_active else []):
+            if any(p not in planned for p in RESEARCH_NODE[queued]["prereq"]):
+                if queued == s.research_active:
+                    s.research_active, s.research_work = (s.research_queue.pop(0) if s.research_queue else ""), 0.0
+                else:
+                    s.research_queue.remove(queued)
+                dropped.append(RESEARCH_NODE[queued]["name"])
+                changed = True
+    game.log(f"Dropped research: {', '.join(dropped)}. The money is spent.")
 
 
 COMMANDS = {"research": queue, "cancel_research": cancel}

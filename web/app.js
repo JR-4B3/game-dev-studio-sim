@@ -1,6 +1,6 @@
 'use strict';
 // App shell: talks to the server, keeps the latest view, draws the frame and routes input.
-let state = null, page = 'Studio', busy = false, connected = true, lastDrawn = '', shownDecision = '';
+let state = null, page = 'Studio', busy = false, connected = true, lastDrawn = '', shownDecision = '', pointerDown = false;
 const app = document.querySelector('#app');
 const PAGES = [['Studio', 'H'], ['Projects', 'G'], ['People', 'T'], ['Business', 'B'], ['Market', 'S']];
 
@@ -61,13 +61,18 @@ function render(force = false) {
   if (!state) return;
   if (!state.started) { welcome(); return; }
   if (state.closed) { campaignOver(); return; }
-  // Don't redraw under the player's hands: an open <select> would collapse.
-  const editing = document.activeElement?.tagName === 'SELECT';
+  // Don't redraw under the player's hands: an open <select> would collapse and a
+  // half-finished click would land on a replaced button.
+  const editing = document.activeElement?.tagName === 'SELECT' || pointerDown;
   const signature = JSON.stringify([page, state.day, state.log[0], state.studio, state.project, state.held,
     state.contracts, state.updates, state.commitments, state.research_progress, selectedProduct]);
   if ((force || signature !== lastDrawn) && !editing) {
     const focusKey = document.activeElement?.dataset?.focusKey;
+    const scrolls = {main: app.querySelector('main')?.scrollTop || 0};
+    app.querySelectorAll('[data-scroll]').forEach(el => { scrolls[el.dataset.scroll] = el.scrollTop; });
     app.innerHTML = `${header()}<main>${PAGE_VIEWS[page]()}</main>${footer()}`;
+    if (scrolls.main) app.querySelector('main').scrollTop = scrolls.main;
+    app.querySelectorAll('[data-scroll]').forEach(el => { if (scrolls[el.dataset.scroll]) el.scrollTop = scrolls[el.dataset.scroll]; });
     lastDrawn = signature;
     if (focusKey) app.querySelector(`[data-focus-key="${focusKey}"]`)?.focus({preventScroll: true});
     refreshDialog();
@@ -166,7 +171,12 @@ document.addEventListener('keydown', event => {
   if (event.target.matches('input, select, textarea')) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (state?.started) send('save'); return; }
   if (event.ctrlKey || event.metaKey || event.altKey || !state) return;
-  if (event.key === 'Escape') { event.preventDefault(); dialogOpen() ? closeDialog() : openDialog('settings'); return; }
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    if (dialogOpen()) closeDialog();
+    else if (state.started && !state.closed) openDialog('settings');
+    return;
+  }
   if (dialogOpen()) return;
   if (!state.started) { if (event.key === 'Enter') send('new'); return; }
   if (event.key === ' ') { event.preventDefault(); send('pause', {}, true); return; }
@@ -175,6 +185,10 @@ document.addEventListener('keydown', event => {
   const target = PAGES.find(([, key]) => key.toLowerCase() === event.key.toLowerCase());
   if (target) { page = target[0]; render(true); }
 });
+
+document.addEventListener('pointerdown', () => { pointerDown = true; });
+document.addEventListener('pointerup', () => { pointerDown = false; });
+document.addEventListener('pointercancel', () => { pointerDown = false; });
 
 poll();
 setInterval(poll, 250);

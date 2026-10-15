@@ -3,13 +3,11 @@ bankruptcy. Every cash movement in the game goes through Game.earn, Game.spend
 or Game.finance, so the books always add up."""
 from ..content import FORMAT, LOAN, LOANS, RESEARCH_NODE, SUPPORT
 from ..game import str_arg
-from ..state import Ledger, Loan
+from ..state import Loan
 
 
 def on_month(game):
     s = game.s.studio
-    game.s.ledgers.append(Ledger(month=game.month_key()))
-    del game.s.ledgers[:-24]
     game.spend("Living costs", game.b.start.living_costs)
     if game.date.month in (1, 4, 7, 10):
         if s.tax_base > 0:

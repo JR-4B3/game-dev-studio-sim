@@ -155,22 +155,23 @@ def community(game, data):
         raise ValueError(f"{rule['name']} is for games in development.")
     if rule.get("release_only") and not target_id:
         raise ValueError(f"{rule['name']} is for released games.")
+    if any(c.kind == "community" and c.key == key and c.target == target_id for c in s.commitments):
+        raise ValueError(f"{rule['name']} is already running.")
     if s.cash < rule["cost"]:
         raise ValueError(f"{rule['name']} costs ${rule['cost']:,.0f}.")
     if rule["cost"]:
         game.spend("Community", rule["cost"])
+    last = target.last_community.get(key, -10_000)
+    recent = game.s.day - last < rule["cooldown"] * 7
+    strength = 0.25 if recent else 1.0
+    target.last_community[key] = game.s.day
     if target_id == 0:
-        recent = False
         if rule.get("reveals_bugs"):
-            target.bugs_known += (target.bugs - target.bugs_known) * rule["reveals_bugs"]
-        market.add_awareness(game, target.awareness, rule["people"], target.idea.genre, target.plan.format)
+            target.bugs_known += (target.bugs - target.bugs_known) * rule["reveals_bugs"] * strength
+        market.add_awareness(game, target.awareness, rule["people"] * strength, target.idea.genre, target.plan.format)
         name = target.idea.title
     else:
-        last = target.last_community.get(key, -10_000)
-        recent = game.s.day - last < rule["cooldown"] * 7
-        strength = 0.25 if recent else 1.0
         target.sentiment = min(100, target.sentiment + rule["sentiment"] * strength)
-        target.last_community[key] = game.s.day
         market.add_awareness(game, target.awareness, rule["people"] * strength, target.genre, target.format)
         name = target.title
     s.commitments.append(Commitment(key=key, kind="community", target=target_id, days_left=rule["weeks"] * 7,

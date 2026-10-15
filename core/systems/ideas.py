@@ -4,6 +4,8 @@ Every Idea hides three true values: how fun its core can be, how complex it is
 to build, and how strongly it appeals to its audiences. The studio only sees
 ranges that always contain the truth. Experiments narrow them.
 """
+import math
+
 from ..content import TRAITS
 from ..genres import GOOD_MATCHES
 from ..idea_text import ACTIVITIES, FANTASIES, HOOKS, SETTINGS, TITLE_HEADS, TITLE_TAILS
@@ -33,7 +35,8 @@ def known_range(rng, truth, width, low, high):
     width = max(0.0, min(width, high - low))
     start = truth - width * rng.uniform(0.15, 0.85)
     start = max(low, min(start, high - width))
-    return Range(round(start, 2), round(start + width, 2))
+    # Round outward: rounding must never move the truth outside the range.
+    return Range(math.floor(min(start, truth) * 100) / 100, math.ceil(max(start + width, truth) * 100) / 100)
 
 
 def narrow(rng, known, truth, strength, low, high):

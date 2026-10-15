@@ -42,7 +42,7 @@ class Game:
             rivals=[], products=[], market=None, ledgers=[], log=[],
         )
         game = cls(state, balance)
-        state.ledgers.append(Ledger(month=game.month_key()))
+        state.ledgers.append(Ledger(month=game.month_key(), opening=state.studio.cash))
         for system in SYSTEMS:
             if hasattr(system, "setup"):
                 system.setup(game)
@@ -89,6 +89,8 @@ class Game:
             self.s.day += 1
             today = self.date
             if today.day == 1:
+                self.s.ledgers.append(Ledger(month=self.month_key(), opening=self.s.studio.cash))
+                del self.s.ledgers[:-24]
                 for system in SYSTEMS:
                     if hasattr(system, "on_month"):
                         system.on_month(self)

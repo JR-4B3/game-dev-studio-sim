@@ -39,6 +39,7 @@ def on_month(game):
 
 def on_day(game):
     s = game.s.studio
+    s.contract_offers = [c for c in s.contract_offers if c.expires_day > game.s.day]
     if not s.contracts:
         return
     active = s.contracts[0]

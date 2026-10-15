@@ -8,7 +8,7 @@ weak games) drain its cash faster than its size can absorb.
 """
 import math
 
-from ..content import (BUSINESS_MODEL, COHORTS, GENRE_FAMILIES, RIVALS, SCOPES, STUDIO_NAME_PARTS)
+from ..content import (BUSINESS_MODEL, COHORTS, FORMAT, GENRE_FAMILIES, RIVALS, SCOPES, STUDIO_NAME_PARTS)
 from ..genres import GENRES, GOOD_MATCHES
 from ..state import Plan, Rival, RivalProject
 from . import ideas as idea_rules
@@ -161,6 +161,9 @@ def finish_project(game, rival, project):
             rng.choice(("Pixel art", "Hand-drawn 2D", "Minimal 2D")))
     plan = Plan(scope=project.scope, format=project.format, presentation=look, storefronts=stores,
                 model=project.model, price=price)
+    from .projects import setup_cost
+    _, fees = setup_cost(plan)
+    rival.cash -= fees + FORMAT[plan.format]["setup"] + model["setup"]
     return market.launch(game, rival.id, rival.name, project.title, project.genre, project.secondary, project.topic,
                          plan, quality, rng.gauss(0.02, 0.06), bugs, marketing, {}, project.title)
 
@@ -262,11 +265,14 @@ def manage(game, rival, monthly):
 def close(game, rival, reason, buyer=None):
     rival.closed_day = game.s.day
     rival.projects.clear()
+    for product in game.s.products:
+        if product.studio_id == rival.id:
+            if buyer:
+                product.studio_id = buyer.id
+            else:
+                product.retired = True  # delisted when the studio goes under
     if buyer:
         rival.owner = buyer.id
-        for product in game.s.products:
-            if product.studio_id == rival.id:
-                product.studio_id = buyer.id
     if rival.staff >= 20 or buyer:
         game.news(f"{rival.name} {reason}.")
 

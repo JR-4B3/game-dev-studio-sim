@@ -76,6 +76,8 @@ class Session:
             if ironman:
                 self.save()
         elif action == "load":
+            if self.game and self.game.s.ironman and not self.game.s.studio.closed:
+                raise ValueError("Ironman studios can't be reloaded.")
             self.game = Game.from_save(json.loads(self.save_path.read_text()))
             self.speed = 0
         elif self.game is None:

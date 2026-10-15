@@ -113,10 +113,25 @@ def add_experience(game, main_skill, workload):
                 person.salary += 300
 
 
-def on_day(game):
+def tire(game, workload):
+    """Called by the work system each workday with the share of the day that was busy."""
     p = game.b.people
+    for person in game.s.studio.team:
+        if not available(person):
+            continue
+        rate = p.fatigue_per_day * max(0.3, workload) * TRAITS[person.trait]["fatigue"]
+        if game.has("health"):
+            rate *= 0.8
+        person.fatigue = min(100, person.fatigue + rate)
+        if person.fatigue >= 100:
+            person.burnout_days = p.burnout_days
+            person.fatigue = 70
+            person.morale = max(0, person.morale - 15)
+            game.log(f"{person.name} burned out and is off for two weeks.")
+
+
+def on_day(game):
     s = game.s.studio
-    workload = getattr(game, "workload", 0.0)
     for person in s.team:
         for counter in ("vacation_days", "burnout_days", "onboarding_days"):
             if getattr(person, counter):
@@ -128,16 +143,6 @@ def on_day(game):
                 setattr(person, person.training_skill, min(99, getattr(person, person.training_skill) + gain))
                 game.log(f"{person.name} finished training: {person.training_skill} +{gain}.")
                 person.training_skill = ""
-        if game.is_workday() and available(person):
-            rate = p.fatigue_per_day * max(0.3, workload) * TRAITS[person.trait]["fatigue"]
-            if game.has("health"):
-                rate *= 0.8
-            person.fatigue = min(100, person.fatigue + rate)
-            if person.fatigue >= 100:
-                person.burnout_days = p.burnout_days
-                person.fatigue = 70
-                person.morale = max(0, person.morale - 15)
-                game.log(f"{person.name} burned out and is off for two weeks.")
 
 
 def on_week(game):

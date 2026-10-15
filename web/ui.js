@@ -33,7 +33,8 @@ function metric(label, value, tone = '') {
   return `<div class="metric ${tone}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
 }
 function section(title, body, control = '', cls = '') {
-  return `<section class="box ${cls}"><div class="section-line"><h2>${esc(title)}</h2>${control}</div><div class="box-body">${body}</div></section>`;
+  const key = title.replace(/[^a-z]/gi, '').toLowerCase();
+  return `<section class="box ${cls}"><div class="section-line"><h2>${esc(title)}</h2>${control}</div><div class="box-body" data-scroll="${key}">${body}</div></section>`;
 }
 const empty = text => `<p class="empty">${esc(text)}</p>`;
 const bar = (value, max = 1, cls = '') => `<progress class="${cls}" value="${Math.max(0, value)}" max="${Math.max(max, 1e-9)}"></progress>`;

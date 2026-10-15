@@ -39,12 +39,10 @@ def allocation(game):
 
 
 def on_day(game):
-    game.workload = 0.0
     if not game.is_workday():
         return
     shares = allocation(game)
-    game.workload = sum(shares.values())
-    game.project_share = shares.get("project", 0.0)
+    workload = sum(shares.values())
     busiest, best = "", 0.0
     jobs = (
         ("project", lambda: projects.skill_weights(game.s.studio.project), projects.work),
@@ -63,7 +61,8 @@ def on_day(game):
         if share > best:
             best = share
             busiest = "research" if weights == "research" else ("design", "art", "audio", "code")[max(range(4), key=lambda i: weights[i])]
-    people.add_experience(game, busiest, game.workload)
+    people.add_experience(game, busiest, workload)
+    people.tire(game, workload)
 
 
 def view(game):
